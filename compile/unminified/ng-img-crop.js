@@ -5,7 +5,7 @@
  * Copyright (c) 2016 undefined
  * License: MIT
  *
- * Generated at Friday, July 29th, 2016, 12:28:27 AM
+ * Generated at Monday, February 29th, 2016, 5:21:19 AM
  */
 (function() {
 var crop = angular.module('ngImgCrop', []);
@@ -512,35 +512,6 @@ crop.factory('cropAreaSquare', ['cropArea', function(CropArea) {
         }
     };
 
-    CropAreaSquare.prototype._clampPoint = function(x, y) {
-        var size = this._ctx.canvas.width;
-
-        if(x < 0) {
-            y -= Math.abs(x);
-            x = 0;
-        }
-
-        if(y < 0) {
-            x -= Math.abs(y);
-            y = 0;
-        }
-
-        if(x > size) {
-            y -= (size - x);
-            x = size;
-        }
-
-        if(y > size) {
-            x -= (size - y);
-            y = size;
-        }
-
-        return {
-            x: x,
-            y: y
-        };
-    };
-
     CropAreaSquare.prototype.processMouseMove = function(mouseCurX, mouseCurY) {
         var cursor = 'default';
         var res = false;
@@ -596,52 +567,58 @@ crop.factory('cropAreaSquare', ['cropArea', function(CropArea) {
                 newNE = {},
                 s = this.getSize(),
                 se = this.getSouthEastBound();
-
             switch (this._resizeCtrlIsDragging) {
                 case 0: // Top Left
                     newNO.x = se.x - newSize;
                     newNO.y = se.y - newSize;
-
-                    newNO = this._clampPoint(newNO.x, newNO.y);
-
-                    this.setSizeByCorners(newNO, {
-                        x: se.x,
-                        y: se.y
-                    });
-
+                    if(newNO.y > 0) {
+                        this.setSizeByCorners(newNO, {
+                            x: se.x,
+                            y: se.y
+                        });
+                    }
                     cursor = 'nwse-resize';
                     break;
                 case 1: // Top Right
-
-                    newNE.x = s.x + newSize;
-                    newNE.y = se.y - newSize;
-
-                    newNE = this._clampPoint(newNE.x, newNE.y);
-
-                    this.setSizeByCorners({
-                        x: s.x,
-                        y: newNE.y
-                    }, {
-                        x: newNE.x,
-                        y: se.y
-                    });
-
+                    if(iFX >= 0 && iFY >= 0) {
+                        //Move to top/right, increase
+                        newNE.x = s.x + newSize;
+                        newNE.y = se.y - newSize;
+                    } else if(iFX < 0 || iFY < 0) {
+                        //else decrease
+                        newNE.x = s.x + newSize;
+                        newNE.y = se.y - newSize;
+                    }
+                    if(newNE.y > 0) {
+                        this.setSizeByCorners({
+                            x: s.x,
+                            y: newNE.y
+                        }, {
+                            x: newNE.x,
+                            y: se.y
+                        });
+                    }
                     cursor = 'nesw-resize';
                     break;
                 case 2: // Bottom Left
-                    newSO.x = se.x - newSize;
-                    newSO.y = s.y + newSize;
-
-                    newSO = this._clampPoint(newSO.x, newSO.y);
-
-                    this.setSizeByCorners({
-                        x: newSO.x,
-                        y: s.y
-                    }, {
-                        x: se.x,
-                        y: newSO.y
-                    });
-
+                    if(iFX >= 0 && iFY >= 0) {
+                        //Move to bottom/left, increase
+                        newSO.x = se.x - newSize;
+                        newSO.y = s.y + newSize;
+                    } else if(iFX <= 0 || iFY <= 0) {
+                        //else decrease
+                        newSO.x = se.x - newSize;
+                        newSO.y = s.y + newSize;
+                    }
+                    if(newSO.y < this._ctx.canvas.height) {
+                        this.setSizeByCorners({
+                            x: newSO.x,
+                            y: s.y
+                        }, {
+                            x: se.x,
+                            y: newSO.y
+                        });
+                    }
                     cursor = 'nesw-resize';
                     break;
                 case 3: // Bottom Right
@@ -649,13 +626,12 @@ crop.factory('cropAreaSquare', ['cropArea', function(CropArea) {
                     newSE.x = s.x + newSize;
                     newSE.y = s.y + newSize;
 
-                    newSE = this._clampPoint(newSE.x, newSE.y);
-
-                    this.setSizeByCorners({
-                        x: s.x,
-                        y: s.y
-                    }, newSE);
-
+                    if(newSE.y < this._ctx.canvas.height) {
+                        this.setSizeByCorners({
+                            x: s.x,
+                            y: s.y
+                        }, newSE);
+                    }
                     cursor = 'nwse-resize';
                     break;
             }
@@ -751,7 +727,6 @@ crop.factory('cropArea', ['cropCanvas', function(CropCanvas) {
         };
 
         this._initSize = undefined;
-        this._initCoords = undefined;
         this._allowCropResizeOnCorners = false;
 
         this._forceAspectRatio = false;
@@ -786,10 +761,6 @@ crop.factory('cropArea', ['cropCanvas', function(CropCanvas) {
 
     CropArea.prototype.setAspect = function(aspect) {
         this._aspect=aspect;
-    };
-
-    CropArea.prototype.getAspect = function() {
-        return this._aspect;
     };
 
     CropArea.prototype.getCanvasSize = function() {
@@ -892,7 +863,7 @@ crop.factory('cropArea', ['cropCanvas', function(CropCanvas) {
             h: s.h
         });
     };
-    
+
     CropArea.prototype.setCenterPointOnMove = function(point) {
         var s = this.getSize();
         this.setSizeOnMove({
@@ -910,18 +881,6 @@ crop.factory('cropArea', ['cropCanvas', function(CropCanvas) {
 
     CropArea.prototype.getInitSize = function() {
         return this._initSize;
-    };
-
-    CropArea.prototype.setInitCoords = function(coords) {
-        //add h/w-data to coords-object
-        coords.h = this.getSize().h;
-        coords.w = this.getSize().w;
-        this._initCoords = this._processSize(coords);
-        this.setSize(this._initCoords);
-    };
-
-    CropArea.prototype.getInitCoords = function() {
-        return this._initCoords;
     };
 
     // return a type string
@@ -946,7 +905,6 @@ crop.factory('cropArea', ['cropCanvas', function(CropCanvas) {
         else newSize.y=size.y;
         return newSize;
     };
-
     CropArea.prototype._preventBoundaryCollision = function(size) {
         var canvasH = this._ctx.canvas.height,
             canvasW = this._ctx.canvas.width;
@@ -1093,8 +1051,8 @@ crop.factory('cropArea', ['cropCanvas', function(CropCanvas) {
         var width = size.w;
         if(this._aspect) width = size.h * this._aspect;
         return {
-            x: (typeof size.x === "undefined") ? this.getSize().x : size.x,
-            y: (typeof size.y === "undefined") ? this.getSize().y : size.y,
+            x: size.x || this.getSize().x,
+            y: size.y || this.getSize().y,
             w: width || this._minSize.w,
             h: size.h || this._minSize.h
         };
@@ -2110,8 +2068,6 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
         var top = box.top + scrollTop - clientTop;
         var left = box.left + scrollLeft - clientLeft;
 
-        var colorPaletteLength = 8;
-
         return {
             top: Math.round(top),
             left: Math.round(left)
@@ -2132,8 +2088,6 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
             // Dimensions
             minCanvasDims = [100, 100],
             maxCanvasDims = [300, 300],
-
-            scalemode = null,
 
             // Result Image size
             resImgSizeArray = [],
@@ -2195,20 +2149,17 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
                     canvasDims[0] = minCanvasDims[0];
                     canvasDims[1] = canvasDims[0] / imageRatio;
                 }
-                if (scalemode === 'fixed-height' && canvasDims[1] > maxCanvasDims[1]) {
+                if (canvasDims[1] > maxCanvasDims[1]) {
                     canvasDims[1] = maxCanvasDims[1];
                     canvasDims[0] = canvasDims[1] * imageRatio;
                 } else if (canvasDims[1] < minCanvasDims[1]) {
                     canvasDims[1] = minCanvasDims[1];
                     canvasDims[0] = canvasDims[1] * imageRatio;
                 }
-                elCanvas.prop('width', canvasDims[0]).prop('height', canvasDims[1]);
-                if (scalemode === 'fixed-height') {
-                    elCanvas.css({
-                        'margin-left': -canvasDims[0] / 2 + 'px',
-                        'margin-top': -canvasDims[1] / 2 + 'px'
-                    });
-                };
+                elCanvas.prop('width', canvasDims[0]).prop('height', canvasDims[1]).css({
+                    'margin-left': -canvasDims[0] / 2 + 'px',
+                    'margin-top': -canvasDims[1] / 2 + 'px'
+                });
 
                 var cw = ctx.canvas.width;
                 var ch = ctx.canvas.height;
@@ -2216,14 +2167,13 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
                 var areaType = self.getAreaType();
                 // enforce 1:1 aspect ratio for square-like selections
                 if ((areaType === 'circle') || (areaType === 'square')) {
-                    if(ch < cw) cw = ch;
-                    else ch = cw;
-                }else if(areaType === 'rectangle' && isAspectRatio){
-                  var aspectRatio = theArea.getAspect(); // use `aspectRatio` instead of `resImgSize` dimensions bc `resImgSize` can be 'selection' string
-                    if(cw/ch > aspectRatio){
-                        cw = aspectRatio * ch;
+                    if(ch<cw) cw=ch;
+                    else ch=cw;
+                }else if(areaType === 'rectangle'&&isAspectRatio){
+                    if(cw/ch>resImgSize.w/resImgSize.h){
+                        cw=resImgSize.w/resImgSize.h*ch;
                     }else{
-                        ch = aspectRatio * cw;
+                        ch=resImgSize.w/resImgSize.h*cw;
                     }
                 }
 
@@ -2244,29 +2194,11 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
                     });
                 }
 
-                if(theArea.getInitCoords()) {
-                    if (self.areaInitIsRelativeToImage) {
-                        var ratio = image.width / canvasDims[0];
-                        theArea.setSize({
-                            w: theArea.getInitSize().w / ratio,
-                            h: theArea.getInitSize().h / ratio,
-                            x: theArea.getInitCoords().x / ratio,
-                            y: theArea.getInitCoords().y / ratio
-                        });
-                    } else {
-                        theArea.setSize({
-                            w: theArea.getSize().w,
-                            h: theArea.getSize().h,
-                            x: theArea.getInitCoords().x,
-                            y: theArea.getInitCoords().y
-                        });
-                    }
-                } else {
-                    theArea.setCenterPoint({
-                        x: ctx.canvas.width / 2,
-                        y: ctx.canvas.height / 2
-                    });
-                }
+                //@todo: set top left corner point
+                theArea.setCenterPoint({
+                    x: ctx.canvas.width / 2,
+                    y: ctx.canvas.height / 2
+                });
 
             } else {
                 elCanvas.prop('width', 0).prop('height', 0).css({
@@ -2455,17 +2387,9 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
                         Math.round(resultHeight));
                 }
             }
-
-            if (resImgQuality !== null) {
-                temp_canvas.toBlob(function(blob) {
-                    _p.resolve(blob);
-                }, resImgFormat, resImgQuality);
-            } else {
-                temp_canvas.toBlob(function(blob) {
-                    _p.resolve(blob);
-                }, resImgFormat);
-            }
-
+            temp_canvas.toBlob(function(blob) {
+                _p.resolve(blob);
+            }, resImgFormat);
             return _p.promise;
         };
 
@@ -2480,6 +2404,7 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
         this.setNewImageSource = function(imageSource) {
             image = null;
             resetCropHost();
+            events.trigger('image-updated');
             if (!!imageSource) {
                 var newImage = new Image();
                 newImage.onload = function() {
@@ -2510,16 +2435,12 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
                                     cw = newImage.height;
                                     ch = newImage.width;
                                     cy = -newImage.height;
-                                    rw = ch;
-                                    rh = cw;
                                     deg = 90;
                                     break;
                                 case 8:
                                     cw = newImage.height;
                                     ch = newImage.width;
                                     cx = -newImage.width;
-                                    rw = ch;
-                                    rh = cw;
                                     deg = 270;
                                     break;
                             }
@@ -2550,17 +2471,12 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
                             ctx.drawImage(newImage, cx, cy, rw, rh);
 
                             image = new Image();
-                            image.onload = function () {
-                                resetCropHost();
-                                events.trigger('image-updated');
-                            };
-
                             image.src = canvas.toDataURL(resImgFormat);
                         } else {
                             image = newImage;
-                            events.trigger('image-updated');
                         }
                         resetCropHost();
+                        events.trigger('image-updated');
                     });
                 };
                 newImage.onerror = function() {
@@ -2570,7 +2486,7 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
                 if (imageSource instanceof window.Blob) {
                     newImage.src = URL.createObjectURL(imageSource);
                 } else {
-                    if (imageSource.substring(0, 4).toLowerCase() === 'http' || imageSource.substring(0, 2) === '//') {
+                    if (imageSource.substring(0, 4).toLowerCase() === 'http') {
                       newImage.crossOrigin = 'anonymous';
                     }
                     newImage.src = imageSource;
@@ -2596,32 +2512,28 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
                     canvasDims[0] = minCanvasDims[0];
                     canvasDims[1] = canvasDims[0] / imageRatio;
                 }
-                if (scalemode === 'fixed-height' && canvasDims[1] > maxCanvasDims[1]) {
+                if (canvasDims[1] > maxCanvasDims[1]) {
                     canvasDims[1] = maxCanvasDims[1];
                     canvasDims[0] = canvasDims[1] * imageRatio;
                 } else if (canvasDims[1] < minCanvasDims[1]) {
                     canvasDims[1] = minCanvasDims[1];
                     canvasDims[0] = canvasDims[1] * imageRatio;
                 }
-                elCanvas.prop('width', canvasDims[0]).prop('height', canvasDims[1]);
-
-                if (scalemode === 'fixed-height') {
-                    elCanvas.css({
-                        'margin-left': -canvasDims[0] / 2 + 'px',
-                        'margin-top': -canvasDims[1] / 2 + 'px'
-                    });
-                };
+                elCanvas.prop('width', canvasDims[0]).prop('height', canvasDims[1]).css({
+                    'margin-left': -canvasDims[0] / 2 + 'px',
+                    'margin-top': -canvasDims[1] / 2 + 'px'
+                });
 
                 var ratioNewCurWidth = ctx.canvas.width / curWidth,
                     ratioNewCurHeight = ctx.canvas.height / curHeight,
                     ratioMin = Math.min(ratioNewCurWidth, ratioNewCurHeight);
 
                 //TODO: use top left corner point
-                var center = theArea.getCenterPoint();
                 theArea.setSize({
                     w: theArea.getSize().w * ratioMin,
                     h: theArea.getSize().h * ratioMin
                 });
+                var center = theArea.getCenterPoint();
                 theArea.setCenterPoint({
                     x: center.x * ratioNewCurWidth,
                     y: center.y * ratioNewCurHeight
@@ -2652,38 +2564,37 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
                 };
             }
             if (!isNaN(size.w) && !isNaN(size.h)) {
+                isAspectRatio=true;
                 theArea.setMinSize(size);
                 drawScene();
             }
         };
 
         this.setAreaMinRelativeSize = function(size) {
-            if (image === null || angular.isUndefined(size)) {
-                return;
-            }
-
-            var canvasSize = theArea.getCanvasSize();
-
-            if (typeof size == 'number' || typeof size == 'string') {
-                areaMinRelativeSize = {
-                    w: size,
-                    h: size
-                };
-                size = {
-                    w: canvasSize.w/(image.width/parseInt(parseInt(size), 10)),
-                    h: canvasSize.h/(image.height/parseInt(parseInt(size), 10))
-                };
-            } else {
-                areaMinRelativeSize = size;
-                size = {
-                    w: canvasSize.w/(image.width/parseInt(parseInt(size.w), 10)),
-                    h: canvasSize.h/(image.height/parseInt(parseInt(size.h), 10))
-                };
-            }
-
-            if (!isNaN(size.w) && !isNaN(size.h)) {
-                theArea.setMinSize(size);
-                drawScene();
+            if (image !== null) {
+              var canvasSize = theArea.getCanvasSize();
+              if (angular.isUndefined(size)) {
+                  return;
+              } else if(typeof size == 'number' || typeof size == 'string') {
+                  areaMinRelativeSize = {
+                      w: size,
+                      h: size
+                  };
+                  size = {
+                      w: canvasSize.w/(image.width/parseInt(parseInt(size), 10)),
+                      h: canvasSize.h/(image.height/parseInt(parseInt(size), 10))
+                  };
+              } else{
+                  areaMinRelativeSize = size;
+                  size = {
+                      w: canvasSize.w/(image.width/parseInt(parseInt(size.w), 10)),
+                      h: canvasSize.h/(image.height/parseInt(parseInt(size.h), 10))
+                  };
+              }
+              if (!isNaN(size.w) && !isNaN(size.h)) {
+                  theArea.setMinSize(size);
+                  drawScene();
+              }
             }
         };
 
@@ -2705,71 +2616,6 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
                 theArea.setInitSize(size);
                 drawScene();
             }
-        };
-
-        this.setAreaInitCoords = function(coords) {
-            if (angular.isUndefined(coords)) {
-                return;
-            }else{
-                coords = {
-                    x: parseInt(coords.x, 10),
-                    y: parseInt(coords.y, 10)
-                };
-            }
-            if (!isNaN(coords.x) && !isNaN(coords.y)) {
-                theArea.setInitCoords(coords);
-                drawScene();
-            }
-        };
-
-        this.setMaxCanvasDimensions = function(maxCanvasDimensions) {
-            if (!angular.isUndefined(maxCanvasDimensions)) {
-                var newMaxCanvasDims = [];
-                if (typeof maxCanvasDimensions == 'number' || typeof maxCanvasDimensions == 'string') {
-                    newMaxCanvasDims = [
-                        parseInt(parseInt(maxCanvasDimensions), 10),
-                        parseInt(parseInt(maxCanvasDimensions), 10)
-                    ];
-                } else {
-                    newMaxCanvasDims = [
-                        parseInt(maxCanvasDimensions.w, 10),
-                        parseInt(maxCanvasDimensions.h, 10)
-                    ];
-                }
-                if ((!isNaN(newMaxCanvasDims[0]) && newMaxCanvasDims[0] > 0 && newMaxCanvasDims[0] > minCanvasDims[0])
-                    && (!isNaN(newMaxCanvasDims[1]) && newMaxCanvasDims[1] > 0 && newMaxCanvasDims[1] > minCanvasDims[1])) {
-                    maxCanvasDims = newMaxCanvasDims;
-                }
-            }
-        };
-
-        this.setMinCanvasDimensions = function(minCanvasDimensions) {
-            if (!angular.isUndefined(minCanvasDimensions)) {
-                var newMinCanvasDims = [];
-                if (typeof minCanvasDimensions == 'number' || typeof minCanvasDimensions == 'string') {
-                    newMinCanvasDims = [
-                        parseInt(parseInt(minCanvasDimensions), 10),
-                        parseInt(parseInt(minCanvasDimensions), 10)
-                    ];
-                } else {
-                    newMinCanvasDims = [
-                        parseInt(minCanvasDimensions.w, 10),
-                        parseInt(minCanvasDimensions.h, 10)
-                    ];
-                }
-                if ((!isNaN(newMinCanvasDims[0]) && newMinCanvasDims[0] >= 0)
-                    && (!isNaN(newMinCanvasDims[1]) && newMinCanvasDims[1] >= 0)) {
-                    minCanvasDims = newMinCanvasDims;
-                }
-            }
-        };
-
-        this.setScalemode = function (value) {
-            scalemode = value;
-        };
-
-        this.getScalemode = function () {
-            return scalemode;
         };
 
         this.getResultImageSize = function() {
@@ -2890,40 +2736,7 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
             drawScene();
         };
 
-        this.getDominantColor = function(uri) {
-            var imageDC = new Image(),
-                colorThief = new ColorThief(),
-                dominantColor = null,
-                _p = $q.defer();
-            imageDC.src = uri;
-            imageDC.onload = function() {
-                dominantColor = colorThief.getColor(imageDC);
-                _p.resolve(dominantColor);
-            };
-
-            return _p.promise;
-        };
-
-        this.getPalette = function(uri) {
-            var imageDC = new Image(),
-                colorThief = new ColorThief(),
-                palette = null,
-                _p = $q.defer();
-            imageDC.src = uri;
-            imageDC.onload = function() {
-                palette = colorThief.getPalette(imageDC, colorPaletteLength);
-                _p.resolve(palette);
-            };
-
-            return _p.promise;
-        };
-
-        this.setPaletteColorLength = function(lg) {
-            colorPaletteLength = lg;
-        };
-
         this.setAspect = function(aspect) {
-            isAspectRatio=true;
             theArea.setAspect(aspect);
             var minSize = theArea.getMinSize();
             minSize.w=minSize.h*aspect;
@@ -2955,11 +2768,11 @@ crop.factory('cropHost', ['$document', '$q', 'cropAreaCircle', 'cropAreaSquare',
         this.destroy = function() {
             $document.off('mousemove', onMouseMove);
             elCanvas.off('mousedown', onMouseDown);
-            $document.off('mouseup',onMouseUp);
+            $document.off('mouseup', onMouseMove);
 
             $document.off('touchmove', onMouseMove);
             elCanvas.off('touchstart', onMouseDown);
-            $document.off('touchend',onMouseUp);
+            $document.off('touchend', onMouseMove);
 
             elCanvas.remove();
         };
@@ -3000,11 +2813,6 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
             urlBlob: '=?',
             chargement: '=?',
             cropject: '=?',
-            maxCanvasDimensions: '=?',
-            minCanvasDimensions: '=?',
-            canvasScalemode: '@?', /* String. If set to 'full-width' the directive uses all width available */
-                             /* and the canvas expands in height as much as it need to maintain the aspect ratio */
-                             /* if set to 'fixed-height', the directive is restricted by a parent element in height */
 
             changeOnFly: '=?',
             liveView: '=?',
@@ -3013,13 +2821,6 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
             areaType: '@',
             areaMinSize: '=?',
             areaInitSize: '=?',
-            areaInitCoords: '=?',
-            areaInitIsRelativeToImage: '=?', /* Boolean: If true the areaInitCoords and areaInitSize is scaled according to canvas size. */
-                                             /* No matter how big/small the canvas is, the resultImage remains the same */
-                                             /* Example: areaInitCoords are {x: 100, y: 100}, areaInitSize {w: 100, h: 100}   */
-                                             /* Image is 1000x1000
-                                             /* if canvas is 500x500 Crop coordinates will be x: 50, y: 50, w: 50, h: 50 */
-                                             /* if canvas is 100x100 crop coordinates will be x: 10, y: 10, w: 10, h: 10 */
             areaMinRelativeSize: '=?',
             resultImageSize: '=?',
             resultImageFormat: '=?',
@@ -3055,14 +2856,6 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
             // Init Crop Host
             var cropHost = new CropHost(element.find('canvas'), {}, events);
 
-            if (scope.canvasScalemode) {
-                cropHost.setScalemode(scope.canvasScalemode);
-            } else {
-                cropHost.setScalemode('fixed-height');
-            }
-
-            element.addClass(cropHost.getScalemode());
-
             // Store Result Image to check if it's changed
             var storedResultImage;
 
@@ -3072,6 +2865,7 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
                     if (angular.isArray(resultImageObj)) {
                         resultImage = resultImageObj[0].dataURI;
                         scope.resultArrayImage = resultImageObj;
+                        console.log(scope.resultArrayImage);
                     } else var resultImage = resultImageObj.dataURI;
 
                     var urlCreator = window.URL || window.webkitURL;
@@ -3084,15 +2878,6 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
                             scope.resultBlob = blob;
                             scope.urlBlob = urlCreator.createObjectURL(blob);
                         });
-
-                        if (scope.resultImage) {
-                            cropHost.getDominantColor(scope.resultImage).then(function (dominantColor) {
-                                scope.dominantColor = dominantColor;
-                            });
-                            cropHost.getPalette(scope.resultImage).then(function (palette) {
-                                scope.paletteColor = palette;
-                            });
-                        }
 
                         updateAreaCoords(scope);
                         scope.onChange({
@@ -3116,7 +2901,6 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
                 };
 
                 scope.cropject = {
-                    canvasSize: cropHost.getArea().getCanvasSize(),
                     areaCoords: areaCoords,
                     cropWidth: areaCoords.w,
                     cropHeight: areaCoords.h,
@@ -3151,11 +2935,8 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
                     scope.onLoadBegin({});
                 }))
                 .on('load-done', fnSafeApply(function (scope) {
-                    var children = element.children();
-                    angular.forEach(children, function (child, index) {
-                        if (angular.element(child).hasClass("loading"))
-                            angular.element(child).remove();
-                    });
+                    angular.element(element.children()[element.children().length - 1]).remove();
+                    cropHost.setAreaMinRelativeSize(scope.areaMinRelativeSize);
                     scope.onLoadDone({});
                 }))
                 .on('load-error', fnSafeApply(function (scope) {
@@ -3166,9 +2947,6 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
                         updateResultImage(scope);
                     }
                     updateCropject(scope);
-                }))
-                .on('image-updated', fnSafeApply(function(scope) {
-                    cropHost.setAreaMinRelativeSize(scope.areaMinRelativeSize);
                 }))
                 .on('area-move-end area-resize-end image-updated', fnSafeApply(function (scope) {
                     updateResultImage(scope);
@@ -3203,17 +2981,6 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
                 cropHost.setAreaInitSize(scope.areaInitSize);
                 updateResultImage(scope);
             });
-            scope.$watch('areaInitCoords', function () {
-                cropHost.setAreaInitCoords(scope.areaInitCoords);
-                cropHost.areaInitIsRelativeToImage = scope.areaInitIsRelativeToImage;
-                updateResultImage(scope);
-            });
-            scope.$watch('maxCanvasDimensions', function () {
-                cropHost.setMaxCanvasDimensions(scope.maxCanvasDimensions);
-            });
-            scope.$watch('minCanvasDimensions', function () {
-                cropHost.setMinCanvasDimensions(scope.minCanvasDimensions);
-            });
             scope.$watch('resultImageFormat', function () {
                 cropHost.setResultImageFormat(scope.resultImageFormat);
                 updateResultImage(scope);
@@ -3225,9 +2992,6 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
             scope.$watch('resultImageSize', function () {
                 cropHost.setResultImageSize(scope.resultImageSize);
                 updateResultImage(scope);
-            });
-            scope.$watch('paletteColorLength', function () {
-                cropHost.setPaletteColorLength(scope.paletteColorLength);
             });
             scope.$watch('aspectRatio', function () {
                 if (typeof scope.aspectRatio == 'string' && scope.aspectRatio != '') {
@@ -3242,26 +3006,11 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
             // Update CropHost dimensions when the directive element is resized
             scope.$watch(
                 function () {
-                    if (cropHost.getScalemode() === 'fixed-height') {
-                        return [element[0].clientWidth, element[0].clientHeight];
-                    }
-                    if (cropHost.getScalemode() === 'full-width') {
-                        return element[0].clientWidth;
-                    }
+                    return [element[0].clientWidth, element[0].clientHeight];
                 },
                 function (value) {
-
-                    if (cropHost.getScalemode() === 'fixed-height') {
-                        if(value[0] > 0 && value[1] > 0) {
-                            cropHost.setMaxDimensions(value[0], value[1]);
-                            updateResultImage(scope);
-                        }
-                    }
-                    if (cropHost.getScalemode() === 'full-width') {
-                        if (value > 0) {
-                            cropHost.setMaxDimensions(value);
-                        }
-                    }
+                    cropHost.setMaxDimensions(value[0], value[1]);
+                    updateResultImage(scope);
                 },
                 true
             );
@@ -3277,7 +3026,7 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
 /* canvas-toBlob.js
  * A canvas.toBlob() implementation.
  * 2013-12-27
- * 
+ *
  * By Eli Grey, http://eligrey.com and Devin Samarin, https://github.com/eboyjr
  * License: X11/MIT
  *   See https://github.com/eligrey/canvas-toBlob.js/blob/master/LICENSE.md
@@ -3396,655 +3145,6 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
         }
     }
 }(typeof self !== "undefined" && self || typeof window !== "undefined" && window || this.content || this));
-
-/*!
- * Color Thief v2.0
- * by Lokesh Dhakar - http://www.lokeshdhakar.com
- *
- * Thanks
- * ------
- * Nick Rabinowitz - For creating quantize.js.
- * John Schulz - For clean up and optimization. @JFSIII
- * Nathan Spady - For adding drag and drop support to the demo page.
- *
- * License
- * -------
- * Copyright 2011, 2015 Lokesh Dhakar
- * Released under the MIT license
- * https://raw.githubusercontent.com/lokesh/color-thief/master/LICENSE
- *
- */
-(function() {
-    /*!
-     * Color Thief v2.0
-     * by Lokesh Dhakar - http://www.lokeshdhakar.com
-     *
-     * Thanks
-     * ------
-     * Nick Rabinowitz - For creating quantize.js.
-     * John Schulz - For clean up and optimization. @JFSIII
-     * Nathan Spady - For adding drag and drop support to the demo page.
-     *
-     * License
-     * -------
-     * Copyright 2011, 2015 Lokesh Dhakar
-     * Released under the MIT license
-     * https://raw.githubusercontent.com/lokesh/color-thief/master/LICENSE
-     *
-     */
-
-    /*
-      CanvasImage Class
-      Class that wraps the html image element and canvas.
-      It also simplifies some of the canvas context manipulation
-      with a set of helper functions.
-    */
-    var CanvasImage = function(image) {
-        this.canvas = document.createElement('canvas');
-        this.context = this.canvas.getContext('2d');
-
-        document.body.appendChild(this.canvas);
-
-        this.width = this.canvas.width = image.width;
-        this.height = this.canvas.height = image.height;
-
-        this.context.drawImage(image, 0, 0, this.width, this.height);
-    };
-
-    CanvasImage.prototype.clear = function() {
-        this.context.clearRect(0, 0, this.width, this.height);
-    };
-
-    CanvasImage.prototype.update = function(imageData) {
-        this.context.putImageData(imageData, 0, 0);
-    };
-
-    CanvasImage.prototype.getPixelCount = function() {
-        return this.width * this.height;
-    };
-
-    CanvasImage.prototype.getImageData = function() {
-        return this.context.getImageData(0, 0, this.width, this.height);
-    };
-
-    CanvasImage.prototype.removeCanvas = function() {
-        this.canvas.parentNode.removeChild(this.canvas);
-    };
-
-    var ColorThief = function() {};
-
-    /*
-     * getColor(sourceImage[, quality])
-     * returns {r: num, g: num, b: num}
-     *
-     * Use the median cut algorithm provided by quantize.js to cluster similar
-     * colors and return the base color from the largest cluster.
-     *
-     * Quality is an optional argument. It needs to be an integer. 1 is the highest quality settings.
-     * 10 is the default. There is a trade-off between quality and speed. The bigger the number, the
-     * faster a color will be returned but the greater the likelihood that it will not be the visually
-     * most dominant color.
-     *
-     * */
-    ColorThief.prototype.getColor = function(sourceImage, quality) {
-        var palette = this.getPalette(sourceImage, 5, quality);
-        var dominantColor = palette[0];
-        return dominantColor;
-    };
-
-    /*
-     * getPalette(sourceImage[, colorCount, quality])
-     * returns array[ {r: num, g: num, b: num}, {r: num, g: num, b: num}, ...]
-     *
-     * Use the median cut algorithm provided by quantize.js to cluster similar colors.
-     *
-     * colorCount determines the size of the palette; the number of colors returned. If not set, it
-     * defaults to 10.
-     *
-     * BUGGY: Function does not always return the requested amount of colors. It can be +/- 2.
-     *
-     * quality is an optional argument. It needs to be an integer. 1 is the highest quality settings.
-     * 10 is the default. There is a trade-off between quality and speed. The bigger the number, the
-     * faster the palette generation but the greater the likelihood that colors will be missed.
-     *
-     *
-     */
-    ColorThief.prototype.getPalette = function(sourceImage, colorCount, quality) {
-
-        if (typeof colorCount === 'undefined') {
-            colorCount = 10;
-        }
-        if (typeof quality === 'undefined' || quality < 1) {
-            quality = 10;
-        }
-
-        // Create custom CanvasImage object
-        var image = new CanvasImage(sourceImage);
-        var imageData = image.getImageData();
-        var pixels = imageData.data;
-        var pixelCount = image.getPixelCount();
-
-        // Store the RGB values in an array format suitable for quantize function
-        var pixelArray = [];
-        for (var i = 0, offset, r, g, b, a; i < pixelCount; i = i + quality) {
-            offset = i * 4;
-            r = pixels[offset + 0];
-            g = pixels[offset + 1];
-            b = pixels[offset + 2];
-            a = pixels[offset + 3];
-            // If pixel is mostly opaque and not white
-            if (a >= 125) {
-                if (!(r > 250 && g > 250 && b > 250)) {
-                    pixelArray.push([r, g, b]);
-                }
-            }
-        }
-
-        // Send array to quantize function which clusters values
-        // using median cut algorithm
-        var cmap = MMCQ.quantize(pixelArray, colorCount);
-        var palette = cmap ? cmap.palette() : null;
-
-        // Clean up
-        image.removeCanvas();
-
-        return palette;
-    };
-
-    /*!
-     * quantize.js Copyright 2008 Nick Rabinowitz.
-     * Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
-     */
-
-    // fill out a couple protovis dependencies
-    /*!
-     * Block below copied from Protovis: http://mbostock.github.com/protovis/
-     * Copyright 2010 Stanford Visualization Group
-     * Licensed under the BSD License: http://www.opensource.org/licenses/bsd-license.php
-     */
-    if (!pv) {
-        var pv = {
-            map: function(array, f) {
-                var o = {};
-                return f ? array.map(function(d, i) {
-                    o.index = i;
-                    return f.call(o, d);
-                }) : array.slice();
-            },
-            naturalOrder: function(a, b) {
-                return (a < b) ? -1 : ((a > b) ? 1 : 0);
-            },
-            sum: function(array, f) {
-                var o = {};
-                return array.reduce(f ? function(p, d, i) {
-                    o.index = i;
-                    return p + f.call(o, d);
-                } : function(p, d) {
-                    return p + d;
-                }, 0);
-            },
-            max: function(array, f) {
-                return Math.max.apply(null, f ? pv.map(array, f) : array);
-            }
-        };
-    }
-
-    /**
-     * Basic Javascript port of the MMCQ (modified median cut quantization)
-     * algorithm from the Leptonica library (http://www.leptonica.com/).
-     * Returns a color map you can use to map original pixels to the reduced
-     * palette. Still a work in progress.
-     *
-     * @author Nick Rabinowitz
-     * @example
-
-    // array of pixels as [R,G,B] arrays
-    var myPixels = [[190,197,190], [202,204,200], [207,214,210], [211,214,211], [205,207,207]
-                    // etc
-                    ];
-    var maxColors = 4;
-
-    var cmap = MMCQ.quantize(myPixels, maxColors);
-    var newPalette = cmap.palette();
-    var newPixels = myPixels.map(function(p) {
-        return cmap.map(p);
-    });
-
-     */
-    var MMCQ = (function() {
-        // private constants
-        var sigbits = 5,
-            rshift = 8 - sigbits,
-            maxIterations = 1000,
-            fractByPopulations = 0.75;
-
-        // get reduced-space color index for a pixel
-        function getColorIndex(r, g, b) {
-            return (r << (2 * sigbits)) + (g << sigbits) + b;
-        }
-
-        // Simple priority queue
-        function PQueue(comparator) {
-            var contents = [],
-                sorted = false;
-
-            function sort() {
-                contents.sort(comparator);
-                sorted = true;
-            }
-
-            return {
-                push: function(o) {
-                    contents.push(o);
-                    sorted = false;
-                },
-                peek: function(index) {
-                    if (!sorted) sort();
-                    if (index === undefined) index = contents.length - 1;
-                    return contents[index];
-                },
-                pop: function() {
-                    if (!sorted) sort();
-                    return contents.pop();
-                },
-                size: function() {
-                    return contents.length;
-                },
-                map: function(f) {
-                    return contents.map(f);
-                },
-                debug: function() {
-                    if (!sorted) sort();
-                    return contents;
-                }
-            };
-        }
-
-        // 3d color space box
-        function VBox(r1, r2, g1, g2, b1, b2, histo) {
-            var vbox = this;
-            vbox.r1 = r1;
-            vbox.r2 = r2;
-            vbox.g1 = g1;
-            vbox.g2 = g2;
-            vbox.b1 = b1;
-            vbox.b2 = b2;
-            vbox.histo = histo;
-        }
-        VBox.prototype = {
-            volume: function(force) {
-                var vbox = this;
-                if (!vbox._volume || force) {
-                    vbox._volume = ((vbox.r2 - vbox.r1 + 1) * (vbox.g2 - vbox.g1 + 1) * (vbox.b2 - vbox.b1 + 1));
-                }
-                return vbox._volume;
-            },
-            count: function(force) {
-                var vbox = this,
-                    histo = vbox.histo;
-                if (!vbox._count_set || force) {
-                    var npix = 0,
-                        i, j, k;
-                    for (i = vbox.r1; i <= vbox.r2; i++) {
-                        for (j = vbox.g1; j <= vbox.g2; j++) {
-                            for (k = vbox.b1; k <= vbox.b2; k++) {
-                                index = getColorIndex(i, j, k);
-                                npix += (histo[index] || 0);
-                            }
-                        }
-                    }
-                    vbox._count = npix;
-                    vbox._count_set = true;
-                }
-                return vbox._count;
-            },
-            copy: function() {
-                var vbox = this;
-                return new VBox(vbox.r1, vbox.r2, vbox.g1, vbox.g2, vbox.b1, vbox.b2, vbox.histo);
-            },
-            avg: function(force) {
-                var vbox = this,
-                    histo = vbox.histo;
-                if (!vbox._avg || force) {
-                    var ntot = 0,
-                        mult = 1 << (8 - sigbits),
-                        rsum = 0,
-                        gsum = 0,
-                        bsum = 0,
-                        hval,
-                        i, j, k, histoindex;
-                    for (i = vbox.r1; i <= vbox.r2; i++) {
-                        for (j = vbox.g1; j <= vbox.g2; j++) {
-                            for (k = vbox.b1; k <= vbox.b2; k++) {
-                                histoindex = getColorIndex(i, j, k);
-                                hval = histo[histoindex] || 0;
-                                ntot += hval;
-                                rsum += (hval * (i + 0.5) * mult);
-                                gsum += (hval * (j + 0.5) * mult);
-                                bsum += (hval * (k + 0.5) * mult);
-                            }
-                        }
-                    }
-                    if (ntot) {
-                        vbox._avg = [~~(rsum / ntot), ~~(gsum / ntot), ~~(bsum / ntot)];
-                    } else {
-                        //                    console.log('empty box');
-                        vbox._avg = [~~(mult * (vbox.r1 + vbox.r2 + 1) / 2), ~~(mult * (vbox.g1 + vbox.g2 + 1) / 2), ~~(mult * (vbox.b1 + vbox.b2 + 1) / 2)];
-                    }
-                }
-                return vbox._avg;
-            },
-            contains: function(pixel) {
-                var vbox = this,
-                    rval = pixel[0] >> rshift;
-                gval = pixel[1] >> rshift;
-                bval = pixel[2] >> rshift;
-                return (rval >= vbox.r1 && rval <= vbox.r2 &&
-                    gval >= vbox.g1 && gval <= vbox.g2 &&
-                    bval >= vbox.b1 && bval <= vbox.b2);
-            }
-        };
-
-        // Color map
-        function CMap() {
-            this.vboxes = new PQueue(function(a, b) {
-                return pv.naturalOrder(
-                    a.vbox.count() * a.vbox.volume(),
-                    b.vbox.count() * b.vbox.volume()
-                );
-            });
-        }
-        CMap.prototype = {
-            push: function(vbox) {
-                this.vboxes.push({
-                    vbox: vbox,
-                    color: vbox.avg()
-                });
-            },
-            palette: function() {
-                return this.vboxes.map(function(vb) {
-                    return vb.color;
-                });
-            },
-            size: function() {
-                return this.vboxes.size();
-            },
-            map: function(color) {
-                var vboxes = this.vboxes;
-                for (var i = 0; i < vboxes.size(); i++) {
-                    if (vboxes.peek(i).vbox.contains(color)) {
-                        return vboxes.peek(i).color;
-                    }
-                }
-                return this.nearest(color);
-            },
-            nearest: function(color) {
-                var vboxes = this.vboxes,
-                    d1, d2, pColor;
-                for (var i = 0; i < vboxes.size(); i++) {
-                    d2 = Math.sqrt(
-                        Math.pow(color[0] - vboxes.peek(i).color[0], 2) +
-                        Math.pow(color[1] - vboxes.peek(i).color[1], 2) +
-                        Math.pow(color[2] - vboxes.peek(i).color[2], 2)
-                    );
-                    if (d2 < d1 || d1 === undefined) {
-                        d1 = d2;
-                        pColor = vboxes.peek(i).color;
-                    }
-                }
-                return pColor;
-            },
-            forcebw: function() {
-                // XXX: won't  work yet
-                var vboxes = this.vboxes;
-                vboxes.sort(function(a, b) {
-                    return pv.naturalOrder(pv.sum(a.color), pv.sum(b.color));
-                });
-
-                // force darkest color to black if everything < 5
-                var lowest = vboxes[0].color;
-                if (lowest[0] < 5 && lowest[1] < 5 && lowest[2] < 5)
-                    vboxes[0].color = [0, 0, 0];
-
-                // force lightest color to white if everything > 251
-                var idx = vboxes.length - 1,
-                    highest = vboxes[idx].color;
-                if (highest[0] > 251 && highest[1] > 251 && highest[2] > 251)
-                    vboxes[idx].color = [255, 255, 255];
-            }
-        };
-
-        // histo (1-d array, giving the number of pixels in
-        // each quantized region of color space), or null on error
-        function getHisto(pixels) {
-            var histosize = 1 << (3 * sigbits),
-                histo = new Array(histosize),
-                index, rval, gval, bval;
-            pixels.forEach(function(pixel) {
-                rval = pixel[0] >> rshift;
-                gval = pixel[1] >> rshift;
-                bval = pixel[2] >> rshift;
-                index = getColorIndex(rval, gval, bval);
-                histo[index] = (histo[index] || 0) + 1;
-            });
-            return histo;
-        }
-
-        function vboxFromPixels(pixels, histo) {
-            var rmin = 1000000,
-                rmax = 0,
-                gmin = 1000000,
-                gmax = 0,
-                bmin = 1000000,
-                bmax = 0,
-                rval, gval, bval;
-            // find min/max
-            pixels.forEach(function(pixel) {
-                rval = pixel[0] >> rshift;
-                gval = pixel[1] >> rshift;
-                bval = pixel[2] >> rshift;
-                if (rval < rmin) rmin = rval;
-                else if (rval > rmax) rmax = rval;
-                if (gval < gmin) gmin = gval;
-                else if (gval > gmax) gmax = gval;
-                if (bval < bmin) bmin = bval;
-                else if (bval > bmax) bmax = bval;
-            });
-            return new VBox(rmin, rmax, gmin, gmax, bmin, bmax, histo);
-        }
-
-        function medianCutApply(histo, vbox) {
-            if (!vbox.count()) return;
-
-            var rw = vbox.r2 - vbox.r1 + 1,
-                gw = vbox.g2 - vbox.g1 + 1,
-                bw = vbox.b2 - vbox.b1 + 1,
-                maxw = pv.max([rw, gw, bw]);
-            // only one pixel, no split
-            if (vbox.count() == 1) {
-                return [vbox.copy()];
-            }
-            /* Find the partial sum arrays along the selected axis. */
-            var total = 0,
-                partialsum = [],
-                lookaheadsum = [],
-                i, j, k, sum, index;
-            if (maxw == rw) {
-                for (i = vbox.r1; i <= vbox.r2; i++) {
-                    sum = 0;
-                    for (j = vbox.g1; j <= vbox.g2; j++) {
-                        for (k = vbox.b1; k <= vbox.b2; k++) {
-                            index = getColorIndex(i, j, k);
-                            sum += (histo[index] || 0);
-                        }
-                    }
-                    total += sum;
-                    partialsum[i] = total;
-                }
-            } else if (maxw == gw) {
-                for (i = vbox.g1; i <= vbox.g2; i++) {
-                    sum = 0;
-                    for (j = vbox.r1; j <= vbox.r2; j++) {
-                        for (k = vbox.b1; k <= vbox.b2; k++) {
-                            index = getColorIndex(j, i, k);
-                            sum += (histo[index] || 0);
-                        }
-                    }
-                    total += sum;
-                    partialsum[i] = total;
-                }
-            } else { /* maxw == bw */
-                for (i = vbox.b1; i <= vbox.b2; i++) {
-                    sum = 0;
-                    for (j = vbox.r1; j <= vbox.r2; j++) {
-                        for (k = vbox.g1; k <= vbox.g2; k++) {
-                            index = getColorIndex(j, k, i);
-                            sum += (histo[index] || 0);
-                        }
-                    }
-                    total += sum;
-                    partialsum[i] = total;
-                }
-            }
-            partialsum.forEach(function(d, i) {
-                lookaheadsum[i] = total - d;
-            });
-
-            function doCut(color) {
-                var dim1 = color + '1',
-                    dim2 = color + '2',
-                    left, right, vbox1, vbox2, d2, count2 = 0;
-                for (i = vbox[dim1]; i <= vbox[dim2]; i++) {
-                    if (partialsum[i] > total / 2) {
-                        vbox1 = vbox.copy();
-                        vbox2 = vbox.copy();
-                        left = i - vbox[dim1];
-                        right = vbox[dim2] - i;
-                        if (left <= right)
-                            d2 = Math.min(vbox[dim2] - 1, ~~(i + right / 2));
-                        else d2 = Math.max(vbox[dim1], ~~(i - 1 - left / 2));
-                        // avoid 0-count boxes
-                        while (!partialsum[d2]) d2++;
-                        count2 = lookaheadsum[d2];
-                        while (!count2 && partialsum[d2 - 1]) count2 = lookaheadsum[--d2];
-                        // set dimensions
-                        vbox1[dim2] = d2;
-                        vbox2[dim1] = vbox1[dim2] + 1;
-                        //                    console.log('vbox counts:', vbox.count(), vbox1.count(), vbox2.count());
-                        return [vbox1, vbox2];
-                    }
-                }
-
-            }
-            // determine the cut planes
-            return maxw == rw ? doCut('r') :
-                maxw == gw ? doCut('g') :
-                doCut('b');
-        }
-
-        function quantize(pixels, maxcolors) {
-            // short-circuit
-            if (!pixels.length || maxcolors < 2 || maxcolors > 256) {
-                //            console.log('wrong number of maxcolors');
-                return false;
-            }
-
-            // XXX: check color content and convert to grayscale if insufficient
-
-            var histo = getHisto(pixels),
-                histosize = 1 << (3 * sigbits);
-
-            // check that we aren't below maxcolors already
-            var nColors = 0;
-            histo.forEach(function() {
-                nColors++;
-            });
-            if (nColors <= maxcolors) {
-                // XXX: generate the new colors from the histo and return
-            }
-
-            // get the beginning vbox from the colors
-            var vbox = vboxFromPixels(pixels, histo),
-                pq = new PQueue(function(a, b) {
-                    return pv.naturalOrder(a.count(), b.count());
-                });
-            pq.push(vbox);
-
-            // inner function to do the iteration
-            function iter(lh, target) {
-                var ncolors = 1,
-                    niters = 0,
-                    vbox;
-                while (niters < maxIterations) {
-                    vbox = lh.pop();
-                    if (!vbox.count()) { /* just put it back */
-                        lh.push(vbox);
-                        niters++;
-                        continue;
-                    }
-                    // do the cut
-                    var vboxes = medianCutApply(histo, vbox),
-                        vbox1 = vboxes[0],
-                        vbox2 = vboxes[1];
-
-                    if (!vbox1) {
-                        //                    console.log("vbox1 not defined; shouldn't happen!");
-                        return;
-                    }
-                    lh.push(vbox1);
-                    if (vbox2) { /* vbox2 can be null */
-                        lh.push(vbox2);
-                        ncolors++;
-                    }
-                    if (ncolors >= target) return;
-                    if (niters++ > maxIterations) {
-                        //                    console.log("infinite loop; perhaps too few pixels!");
-                        return;
-                    }
-                }
-            }
-
-            // first set of colors, sorted by population
-            iter(pq, fractByPopulations * maxcolors);
-
-            // Re-sort by the product of pixel occupancy times the size in color space.
-            var pq2 = new PQueue(function(a, b) {
-                return pv.naturalOrder(a.count() * a.volume(), b.count() * b.volume());
-            });
-            while (pq.size()) {
-                pq2.push(pq.pop());
-            }
-
-            // next set - generate the median cuts using the (npix * vol) sorting.
-            iter(pq2, maxcolors - pq2.size());
-
-            // calculate the actual colors
-            var cmap = new CMap();
-            while (pq2.size()) {
-                cmap.push(pq2.pop());
-            }
-
-            return cmap;
-        }
-
-        return {
-            quantize: quantize
-        };
-    })();
-
-    /**
-     * Export class to global
-     */
-    if (typeof define === 'function' && define.amd) {
-        define([], function() {
-            return ColorThief;
-        }); // for AMD loader
-    } else if (typeof exports === 'object') {
-        module.exports = ColorThief; // for CommonJS
-    } else {
-        this.ColorThief = ColorThief;
-    }
-}.call(this));
 
 }());
 
@@ -5115,652 +4215,3 @@ crop.directive('imgCrop', ['$timeout', 'cropHost', 'cropPubSub', function ($time
   }
 
 })();
-
-/*!
- * Color Thief v2.0
- * by Lokesh Dhakar - http://www.lokeshdhakar.com
- *
- * Thanks
- * ------
- * Nick Rabinowitz - For creating quantize.js.
- * John Schulz - For clean up and optimization. @JFSIII
- * Nathan Spady - For adding drag and drop support to the demo page.
- *
- * License
- * -------
- * Copyright 2011, 2015 Lokesh Dhakar
- * Released under the MIT license
- * https://raw.githubusercontent.com/lokesh/color-thief/master/LICENSE
- *
- */
-(function() {
-    /*!
-     * Color Thief v2.0
-     * by Lokesh Dhakar - http://www.lokeshdhakar.com
-     *
-     * Thanks
-     * ------
-     * Nick Rabinowitz - For creating quantize.js.
-     * John Schulz - For clean up and optimization. @JFSIII
-     * Nathan Spady - For adding drag and drop support to the demo page.
-     *
-     * License
-     * -------
-     * Copyright 2011, 2015 Lokesh Dhakar
-     * Released under the MIT license
-     * https://raw.githubusercontent.com/lokesh/color-thief/master/LICENSE
-     *
-     */
-
-    /*
-      CanvasImage Class
-      Class that wraps the html image element and canvas.
-      It also simplifies some of the canvas context manipulation
-      with a set of helper functions.
-    */
-    var CanvasImage = function(image) {
-        this.canvas = document.createElement('canvas');
-        this.context = this.canvas.getContext('2d');
-
-        document.body.appendChild(this.canvas);
-
-        this.width = this.canvas.width = image.width;
-        this.height = this.canvas.height = image.height;
-
-        this.context.drawImage(image, 0, 0, this.width, this.height);
-    };
-
-    CanvasImage.prototype.clear = function() {
-        this.context.clearRect(0, 0, this.width, this.height);
-    };
-
-    CanvasImage.prototype.update = function(imageData) {
-        this.context.putImageData(imageData, 0, 0);
-    };
-
-    CanvasImage.prototype.getPixelCount = function() {
-        return this.width * this.height;
-    };
-
-    CanvasImage.prototype.getImageData = function() {
-        return this.context.getImageData(0, 0, this.width, this.height);
-    };
-
-    CanvasImage.prototype.removeCanvas = function() {
-        this.canvas.parentNode.removeChild(this.canvas);
-    };
-
-    var ColorThief = function() {};
-
-    /*
-     * getColor(sourceImage[, quality])
-     * returns {r: num, g: num, b: num}
-     *
-     * Use the median cut algorithm provided by quantize.js to cluster similar
-     * colors and return the base color from the largest cluster.
-     *
-     * Quality is an optional argument. It needs to be an integer. 1 is the highest quality settings.
-     * 10 is the default. There is a trade-off between quality and speed. The bigger the number, the
-     * faster a color will be returned but the greater the likelihood that it will not be the visually
-     * most dominant color.
-     *
-     * */
-    ColorThief.prototype.getColor = function(sourceImage, quality) {
-        var palette = this.getPalette(sourceImage, 5, quality);
-        var dominantColor = palette[0];
-        return dominantColor;
-    };
-
-    /*
-     * getPalette(sourceImage[, colorCount, quality])
-     * returns array[ {r: num, g: num, b: num}, {r: num, g: num, b: num}, ...]
-     *
-     * Use the median cut algorithm provided by quantize.js to cluster similar colors.
-     *
-     * colorCount determines the size of the palette; the number of colors returned. If not set, it
-     * defaults to 10.
-     *
-     * BUGGY: Function does not always return the requested amount of colors. It can be +/- 2.
-     *
-     * quality is an optional argument. It needs to be an integer. 1 is the highest quality settings.
-     * 10 is the default. There is a trade-off between quality and speed. The bigger the number, the
-     * faster the palette generation but the greater the likelihood that colors will be missed.
-     *
-     *
-     */
-    ColorThief.prototype.getPalette = function(sourceImage, colorCount, quality) {
-
-        if (typeof colorCount === 'undefined') {
-            colorCount = 10;
-        }
-        if (typeof quality === 'undefined' || quality < 1) {
-            quality = 10;
-        }
-
-        // Create custom CanvasImage object
-        var image = new CanvasImage(sourceImage);
-        var imageData = image.getImageData();
-        var pixels = imageData.data;
-        var pixelCount = image.getPixelCount();
-
-        // Store the RGB values in an array format suitable for quantize function
-        var pixelArray = [];
-        for (var i = 0, offset, r, g, b, a; i < pixelCount; i = i + quality) {
-            offset = i * 4;
-            r = pixels[offset + 0];
-            g = pixels[offset + 1];
-            b = pixels[offset + 2];
-            a = pixels[offset + 3];
-            // If pixel is mostly opaque and not white
-            if (a >= 125) {
-                if (!(r > 250 && g > 250 && b > 250)) {
-                    pixelArray.push([r, g, b]);
-                }
-            }
-        }
-
-        // Send array to quantize function which clusters values
-        // using median cut algorithm
-        var cmap = MMCQ.quantize(pixelArray, colorCount);
-        var palette = cmap ? cmap.palette() : null;
-
-        // Clean up
-        image.removeCanvas();
-
-        return palette;
-    };
-
-    /*!
-     * quantize.js Copyright 2008 Nick Rabinowitz.
-     * Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
-     */
-
-    // fill out a couple protovis dependencies
-    /*!
-     * Block below copied from Protovis: http://mbostock.github.com/protovis/
-     * Copyright 2010 Stanford Visualization Group
-     * Licensed under the BSD License: http://www.opensource.org/licenses/bsd-license.php
-     */
-    if (!pv) {
-        var pv = {
-            map: function(array, f) {
-                var o = {};
-                return f ? array.map(function(d, i) {
-                    o.index = i;
-                    return f.call(o, d);
-                }) : array.slice();
-            },
-            naturalOrder: function(a, b) {
-                return (a < b) ? -1 : ((a > b) ? 1 : 0);
-            },
-            sum: function(array, f) {
-                var o = {};
-                return array.reduce(f ? function(p, d, i) {
-                    o.index = i;
-                    return p + f.call(o, d);
-                } : function(p, d) {
-                    return p + d;
-                }, 0);
-            },
-            max: function(array, f) {
-                return Math.max.apply(null, f ? pv.map(array, f) : array);
-            }
-        };
-    }
-
-    /**
-     * Basic Javascript port of the MMCQ (modified median cut quantization)
-     * algorithm from the Leptonica library (http://www.leptonica.com/).
-     * Returns a color map you can use to map original pixels to the reduced
-     * palette. Still a work in progress.
-     *
-     * @author Nick Rabinowitz
-     * @example
-
-    // array of pixels as [R,G,B] arrays
-    var myPixels = [[190,197,190], [202,204,200], [207,214,210], [211,214,211], [205,207,207]
-                    // etc
-                    ];
-    var maxColors = 4;
-
-    var cmap = MMCQ.quantize(myPixels, maxColors);
-    var newPalette = cmap.palette();
-    var newPixels = myPixels.map(function(p) {
-        return cmap.map(p);
-    });
-
-     */
-    var MMCQ = (function() {
-        // private constants
-        var sigbits = 5,
-            rshift = 8 - sigbits,
-            maxIterations = 1000,
-            fractByPopulations = 0.75;
-
-        // get reduced-space color index for a pixel
-        function getColorIndex(r, g, b) {
-            return (r << (2 * sigbits)) + (g << sigbits) + b;
-        }
-
-        // Simple priority queue
-        function PQueue(comparator) {
-            var contents = [],
-                sorted = false;
-
-            function sort() {
-                contents.sort(comparator);
-                sorted = true;
-            }
-
-            return {
-                push: function(o) {
-                    contents.push(o);
-                    sorted = false;
-                },
-                peek: function(index) {
-                    if (!sorted) sort();
-                    if (index === undefined) index = contents.length - 1;
-                    return contents[index];
-                },
-                pop: function() {
-                    if (!sorted) sort();
-                    return contents.pop();
-                },
-                size: function() {
-                    return contents.length;
-                },
-                map: function(f) {
-                    return contents.map(f);
-                },
-                debug: function() {
-                    if (!sorted) sort();
-                    return contents;
-                }
-            };
-        }
-
-        // 3d color space box
-        function VBox(r1, r2, g1, g2, b1, b2, histo) {
-            var vbox = this;
-            vbox.r1 = r1;
-            vbox.r2 = r2;
-            vbox.g1 = g1;
-            vbox.g2 = g2;
-            vbox.b1 = b1;
-            vbox.b2 = b2;
-            vbox.histo = histo;
-        }
-        VBox.prototype = {
-            volume: function(force) {
-                var vbox = this;
-                if (!vbox._volume || force) {
-                    vbox._volume = ((vbox.r2 - vbox.r1 + 1) * (vbox.g2 - vbox.g1 + 1) * (vbox.b2 - vbox.b1 + 1));
-                }
-                return vbox._volume;
-            },
-            count: function(force) {
-                var vbox = this,
-                    histo = vbox.histo;
-                if (!vbox._count_set || force) {
-                    var npix = 0,
-                        i, j, k;
-                    for (i = vbox.r1; i <= vbox.r2; i++) {
-                        for (j = vbox.g1; j <= vbox.g2; j++) {
-                            for (k = vbox.b1; k <= vbox.b2; k++) {
-                                index = getColorIndex(i, j, k);
-                                npix += (histo[index] || 0);
-                            }
-                        }
-                    }
-                    vbox._count = npix;
-                    vbox._count_set = true;
-                }
-                return vbox._count;
-            },
-            copy: function() {
-                var vbox = this;
-                return new VBox(vbox.r1, vbox.r2, vbox.g1, vbox.g2, vbox.b1, vbox.b2, vbox.histo);
-            },
-            avg: function(force) {
-                var vbox = this,
-                    histo = vbox.histo;
-                if (!vbox._avg || force) {
-                    var ntot = 0,
-                        mult = 1 << (8 - sigbits),
-                        rsum = 0,
-                        gsum = 0,
-                        bsum = 0,
-                        hval,
-                        i, j, k, histoindex;
-                    for (i = vbox.r1; i <= vbox.r2; i++) {
-                        for (j = vbox.g1; j <= vbox.g2; j++) {
-                            for (k = vbox.b1; k <= vbox.b2; k++) {
-                                histoindex = getColorIndex(i, j, k);
-                                hval = histo[histoindex] || 0;
-                                ntot += hval;
-                                rsum += (hval * (i + 0.5) * mult);
-                                gsum += (hval * (j + 0.5) * mult);
-                                bsum += (hval * (k + 0.5) * mult);
-                            }
-                        }
-                    }
-                    if (ntot) {
-                        vbox._avg = [~~(rsum / ntot), ~~(gsum / ntot), ~~(bsum / ntot)];
-                    } else {
-                        //                    console.log('empty box');
-                        vbox._avg = [~~(mult * (vbox.r1 + vbox.r2 + 1) / 2), ~~(mult * (vbox.g1 + vbox.g2 + 1) / 2), ~~(mult * (vbox.b1 + vbox.b2 + 1) / 2)];
-                    }
-                }
-                return vbox._avg;
-            },
-            contains: function(pixel) {
-                var vbox = this,
-                    rval = pixel[0] >> rshift;
-                gval = pixel[1] >> rshift;
-                bval = pixel[2] >> rshift;
-                return (rval >= vbox.r1 && rval <= vbox.r2 &&
-                    gval >= vbox.g1 && gval <= vbox.g2 &&
-                    bval >= vbox.b1 && bval <= vbox.b2);
-            }
-        };
-
-        // Color map
-        function CMap() {
-            this.vboxes = new PQueue(function(a, b) {
-                return pv.naturalOrder(
-                    a.vbox.count() * a.vbox.volume(),
-                    b.vbox.count() * b.vbox.volume()
-                );
-            });
-        }
-        CMap.prototype = {
-            push: function(vbox) {
-                this.vboxes.push({
-                    vbox: vbox,
-                    color: vbox.avg()
-                });
-            },
-            palette: function() {
-                return this.vboxes.map(function(vb) {
-                    return vb.color;
-                });
-            },
-            size: function() {
-                return this.vboxes.size();
-            },
-            map: function(color) {
-                var vboxes = this.vboxes;
-                for (var i = 0; i < vboxes.size(); i++) {
-                    if (vboxes.peek(i).vbox.contains(color)) {
-                        return vboxes.peek(i).color;
-                    }
-                }
-                return this.nearest(color);
-            },
-            nearest: function(color) {
-                var vboxes = this.vboxes,
-                    d1, d2, pColor;
-                for (var i = 0; i < vboxes.size(); i++) {
-                    d2 = Math.sqrt(
-                        Math.pow(color[0] - vboxes.peek(i).color[0], 2) +
-                        Math.pow(color[1] - vboxes.peek(i).color[1], 2) +
-                        Math.pow(color[2] - vboxes.peek(i).color[2], 2)
-                    );
-                    if (d2 < d1 || d1 === undefined) {
-                        d1 = d2;
-                        pColor = vboxes.peek(i).color;
-                    }
-                }
-                return pColor;
-            },
-            forcebw: function() {
-                // XXX: won't  work yet
-                var vboxes = this.vboxes;
-                vboxes.sort(function(a, b) {
-                    return pv.naturalOrder(pv.sum(a.color), pv.sum(b.color));
-                });
-
-                // force darkest color to black if everything < 5
-                var lowest = vboxes[0].color;
-                if (lowest[0] < 5 && lowest[1] < 5 && lowest[2] < 5)
-                    vboxes[0].color = [0, 0, 0];
-
-                // force lightest color to white if everything > 251
-                var idx = vboxes.length - 1,
-                    highest = vboxes[idx].color;
-                if (highest[0] > 251 && highest[1] > 251 && highest[2] > 251)
-                    vboxes[idx].color = [255, 255, 255];
-            }
-        };
-
-        // histo (1-d array, giving the number of pixels in
-        // each quantized region of color space), or null on error
-        function getHisto(pixels) {
-            var histosize = 1 << (3 * sigbits),
-                histo = new Array(histosize),
-                index, rval, gval, bval;
-            pixels.forEach(function(pixel) {
-                rval = pixel[0] >> rshift;
-                gval = pixel[1] >> rshift;
-                bval = pixel[2] >> rshift;
-                index = getColorIndex(rval, gval, bval);
-                histo[index] = (histo[index] || 0) + 1;
-            });
-            return histo;
-        }
-
-        function vboxFromPixels(pixels, histo) {
-            var rmin = 1000000,
-                rmax = 0,
-                gmin = 1000000,
-                gmax = 0,
-                bmin = 1000000,
-                bmax = 0,
-                rval, gval, bval;
-            // find min/max
-            pixels.forEach(function(pixel) {
-                rval = pixel[0] >> rshift;
-                gval = pixel[1] >> rshift;
-                bval = pixel[2] >> rshift;
-                if (rval < rmin) rmin = rval;
-                else if (rval > rmax) rmax = rval;
-                if (gval < gmin) gmin = gval;
-                else if (gval > gmax) gmax = gval;
-                if (bval < bmin) bmin = bval;
-                else if (bval > bmax) bmax = bval;
-            });
-            return new VBox(rmin, rmax, gmin, gmax, bmin, bmax, histo);
-        }
-
-        function medianCutApply(histo, vbox) {
-            if (!vbox.count()) return;
-
-            var rw = vbox.r2 - vbox.r1 + 1,
-                gw = vbox.g2 - vbox.g1 + 1,
-                bw = vbox.b2 - vbox.b1 + 1,
-                maxw = pv.max([rw, gw, bw]);
-            // only one pixel, no split
-            if (vbox.count() == 1) {
-                return [vbox.copy()];
-            }
-            /* Find the partial sum arrays along the selected axis. */
-            var total = 0,
-                partialsum = [],
-                lookaheadsum = [],
-                i, j, k, sum, index;
-            if (maxw == rw) {
-                for (i = vbox.r1; i <= vbox.r2; i++) {
-                    sum = 0;
-                    for (j = vbox.g1; j <= vbox.g2; j++) {
-                        for (k = vbox.b1; k <= vbox.b2; k++) {
-                            index = getColorIndex(i, j, k);
-                            sum += (histo[index] || 0);
-                        }
-                    }
-                    total += sum;
-                    partialsum[i] = total;
-                }
-            } else if (maxw == gw) {
-                for (i = vbox.g1; i <= vbox.g2; i++) {
-                    sum = 0;
-                    for (j = vbox.r1; j <= vbox.r2; j++) {
-                        for (k = vbox.b1; k <= vbox.b2; k++) {
-                            index = getColorIndex(j, i, k);
-                            sum += (histo[index] || 0);
-                        }
-                    }
-                    total += sum;
-                    partialsum[i] = total;
-                }
-            } else { /* maxw == bw */
-                for (i = vbox.b1; i <= vbox.b2; i++) {
-                    sum = 0;
-                    for (j = vbox.r1; j <= vbox.r2; j++) {
-                        for (k = vbox.g1; k <= vbox.g2; k++) {
-                            index = getColorIndex(j, k, i);
-                            sum += (histo[index] || 0);
-                        }
-                    }
-                    total += sum;
-                    partialsum[i] = total;
-                }
-            }
-            partialsum.forEach(function(d, i) {
-                lookaheadsum[i] = total - d;
-            });
-
-            function doCut(color) {
-                var dim1 = color + '1',
-                    dim2 = color + '2',
-                    left, right, vbox1, vbox2, d2, count2 = 0;
-                for (i = vbox[dim1]; i <= vbox[dim2]; i++) {
-                    if (partialsum[i] > total / 2) {
-                        vbox1 = vbox.copy();
-                        vbox2 = vbox.copy();
-                        left = i - vbox[dim1];
-                        right = vbox[dim2] - i;
-                        if (left <= right)
-                            d2 = Math.min(vbox[dim2] - 1, ~~(i + right / 2));
-                        else d2 = Math.max(vbox[dim1], ~~(i - 1 - left / 2));
-                        // avoid 0-count boxes
-                        while (!partialsum[d2]) d2++;
-                        count2 = lookaheadsum[d2];
-                        while (!count2 && partialsum[d2 - 1]) count2 = lookaheadsum[--d2];
-                        // set dimensions
-                        vbox1[dim2] = d2;
-                        vbox2[dim1] = vbox1[dim2] + 1;
-                        //                    console.log('vbox counts:', vbox.count(), vbox1.count(), vbox2.count());
-                        return [vbox1, vbox2];
-                    }
-                }
-
-            }
-            // determine the cut planes
-            return maxw == rw ? doCut('r') :
-                maxw == gw ? doCut('g') :
-                doCut('b');
-        }
-
-        function quantize(pixels, maxcolors) {
-            // short-circuit
-            if (!pixels.length || maxcolors < 2 || maxcolors > 256) {
-                //            console.log('wrong number of maxcolors');
-                return false;
-            }
-
-            // XXX: check color content and convert to grayscale if insufficient
-
-            var histo = getHisto(pixels),
-                histosize = 1 << (3 * sigbits);
-
-            // check that we aren't below maxcolors already
-            var nColors = 0;
-            histo.forEach(function() {
-                nColors++;
-            });
-            if (nColors <= maxcolors) {
-                // XXX: generate the new colors from the histo and return
-            }
-
-            // get the beginning vbox from the colors
-            var vbox = vboxFromPixels(pixels, histo),
-                pq = new PQueue(function(a, b) {
-                    return pv.naturalOrder(a.count(), b.count());
-                });
-            pq.push(vbox);
-
-            // inner function to do the iteration
-            function iter(lh, target) {
-                var ncolors = 1,
-                    niters = 0,
-                    vbox;
-                while (niters < maxIterations) {
-                    vbox = lh.pop();
-                    if (!vbox.count()) { /* just put it back */
-                        lh.push(vbox);
-                        niters++;
-                        continue;
-                    }
-                    // do the cut
-                    var vboxes = medianCutApply(histo, vbox),
-                        vbox1 = vboxes[0],
-                        vbox2 = vboxes[1];
-
-                    if (!vbox1) {
-                        //                    console.log("vbox1 not defined; shouldn't happen!");
-                        return;
-                    }
-                    lh.push(vbox1);
-                    if (vbox2) { /* vbox2 can be null */
-                        lh.push(vbox2);
-                        ncolors++;
-                    }
-                    if (ncolors >= target) return;
-                    if (niters++ > maxIterations) {
-                        //                    console.log("infinite loop; perhaps too few pixels!");
-                        return;
-                    }
-                }
-            }
-
-            // first set of colors, sorted by population
-            iter(pq, fractByPopulations * maxcolors);
-
-            // Re-sort by the product of pixel occupancy times the size in color space.
-            var pq2 = new PQueue(function(a, b) {
-                return pv.naturalOrder(a.count() * a.volume(), b.count() * b.volume());
-            });
-            while (pq.size()) {
-                pq2.push(pq.pop());
-            }
-
-            // next set - generate the median cuts using the (npix * vol) sorting.
-            iter(pq2, maxcolors - pq2.size());
-
-            // calculate the actual colors
-            var cmap = new CMap();
-            while (pq2.size()) {
-                cmap.push(pq2.pop());
-            }
-
-            return cmap;
-        }
-
-        return {
-            quantize: quantize
-        };
-    })();
-
-    /**
-     * Export class to global
-     */
-    if (typeof define === 'function' && define.amd) {
-        define([], function() {
-            return ColorThief;
-        }); // for AMD loader
-    } else if (typeof exports === 'object') {
-        module.exports = ColorThief; // for CommonJS
-    } else {
-        this.ColorThief = ColorThief;
-    }
-}.call(this));
